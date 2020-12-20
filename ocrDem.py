@@ -5,13 +5,19 @@ import difflib
 #from __future__ import barry_as_FLUFL
 from PIL import ImageDraw
 from functools import lru_cache
+import difflib
+import logging
+import telebot
+#from config import reader
 
 reader = easyocr.Reader(['en','ru'], gpu = False)
-
+print('done')
+#x = str(input()).lower()
 ###сортировка файликов в папочке###
-unsorted_file_list = os.listdir()
+unsorted_file_list = os.listdir(path=r"C:\Users\User\Desktop\ocrd\images")
 sortetd_file_list = sorted(unsorted_file_list)
-#print(sortetd_file_list)
+os.chdir(path=r"C:\Users\User\Desktop\ocrd\images")
+print(sortetd_file_list)
 
 ###создание массивика только с картиночками###
 image_list = []
@@ -24,7 +30,7 @@ for file in sortetd_file_list:
         image_list.append(file)
     elif '.jfif' in file:
         image_list.append(file)
-#print(image_list)
+print(image_list)
 
 
 ###Прогон картиночек###
@@ -85,7 +91,7 @@ for i in trash_dict:
     trash_dict[i] = ' '.join(map(str,trash_dict[i]))
     trash_dict[i] = trash_dict[i].lower()
 #print(trash_dict)
-
+print('done')
 ### алгоритмы ###
 
 ### Левенштейн ###
@@ -115,20 +121,46 @@ def tanimoto(s1, s2):
     return c / (a + b - c)
 
 ###Дифлиб###
-import difflib
+
 
 def simil(s1,s2):
     matcher = difflib.SequenceMatcher(None, s1, s2)
     return matcher.ratio()
 
 ### поиск###
+"""
 lev_dict = {}
-x = str(input()).lower()
+
 ####поиск картинки###
 for i in trash_dict:
     klev = simil(trash_dict[i],x)
     lev_dict[klev] = i
 #print(lev_dict)
 res = PIL.Image.open(lev_dict[max(lev_dict)])
-#print(res)
+res.show()
+
 #print(lev_dict)
+"""
+
+
+API_TOKEN = '1433598427:AAFMI1BDQw0DZ_YTvMAc--0A3IZgmWV8nLw'
+path = "C:/Users/User/Desktop/ocrd/images/"
+bot = telebot.TeleBot(API_TOKEN)
+
+
+@bot.message_handler(content_types=["text", "photo","sticker"])
+def repeat_all_messages(message):
+    lev_dict = {}
+
+    ####поиск картинки###
+    for i in trash_dict:
+        klev = simil(trash_dict[i], message.text.lower())
+        lev_dict[klev] = i
+    # pic = lev_dict[max(lev_dict)]
+    pic = open(path + lev_dict[max(lev_dict)], 'rb')
+    bot.send_sticker(message.chat.id, pic)
+    # bot.send_message(message.chat.id, message.text)
+
+
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
