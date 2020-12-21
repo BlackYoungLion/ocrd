@@ -8,6 +8,8 @@ from functools import lru_cache
 import difflib
 import logging
 import telebot
+import psycopg2
+from psycopg2 import OperationalError
 #from config import reader
 
 reader = easyocr.Reader(['en','ru'], gpu = False)
@@ -30,7 +32,7 @@ for file in sortetd_file_list:
         image_list.append(file)
     elif '.jfif' in file:
         image_list.append(file)
-print(image_list)
+#print(image_list)
 
 
 ###Прогон картиночек###
@@ -82,6 +84,9 @@ for i in pile:
         ansvers.append(j[1])
 # print(ansvers)
 
+for i in ansvers:
+    if i == '':
+        i =='None'
 ### создание словаря###
 trash_dict = {key: value for key, value in zip(image_list, tr)}
 #print(trash_dict)
@@ -90,8 +95,87 @@ trash_dict = {key: value for key, value in zip(image_list, tr)}
 for i in trash_dict:
     trash_dict[i] = ' '.join(map(str,trash_dict[i]))
     trash_dict[i] = trash_dict[i].lower()
-#print(trash_dict)
+
+print(trash_dict)
+pict = []
+for i in trash_dict.items():
+    pict.append(i)
+#print(trash_dict.items())
+print(pict)
 print('done')
+###БАЗА###
+
+
+def create_connection(db_name, db_user, db_password, db_host, db_port):
+    connection = None
+    try:
+        connection = psycopg2.connect(
+            database=db_name,
+            user=db_user,
+            password=db_password,
+            host=db_host,
+            port=db_port,
+        )
+        print("Connection to PostgreSQL DB successful")
+    except OperationalError as e:
+        print(f"The error '{e}' occurred")
+    return connection
+
+
+connection = create_connection(
+    "postgres", "postgres", "logocentrism1", "localhost", "5432"
+)
+####Создание базы###
+
+def create_database(connection, query):
+    connection.autocommit = True
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        print("Query executed successfully")
+    except OperationalError as e:
+        print(f"The error '{e}' occurred")
+
+create_database_query = "CREATE DATABASE Pict_Base"
+#create_database(connection, create_database_query)
+
+###коннект###
+connection = create_connection(
+    "Pict_Base", "postgres", "logocentrism1", "127.0.0.1", "5432"
+)
+
+### создание таблицы###
+
+def execute_query(connection, query):
+    connection.autocommit = True
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        print("Query executed successfully")
+    except OperationalError as e:
+        print(f"The error '{e}' occurred")
+
+create_Picture_table = """
+CREATE TABLE IF NOT EXISTS Picture (
+  id SERIAL PRIMARY KEY,
+  picture_name TEXT NOT NULL, 
+  pict_text TEXT
+)
+"""
+
+execute_query(connection, create_Picture_table)
+print('create_Pict_table: done')
+
+###внесение данных в таблицу###
+pict_records = ", ".join(["%s"] * len(pict))
+insert_query = (
+    f"INSERT INTO pict (picture_name, pict_text) VALUES {pict_records}"
+)
+
+connection.autocommit = True
+cursor = connection.cursor()
+cursor.execute(insert_query, pict)
+print('information insert into database')
 ### алгоритмы ###
 
 ### Левенштейн ###
@@ -142,7 +226,7 @@ res.show()
 #print(lev_dict)
 """
 
-
+'''
 API_TOKEN = '1433598427:AAFMI1BDQw0DZ_YTvMAc--0A3IZgmWV8nLw'
 path = "C:/Users/User/Desktop/ocrd/images/"
 bot = telebot.TeleBot(API_TOKEN)
@@ -163,4 +247,5 @@ def repeat_all_messages(message):
 
 
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    bot.polling(none_stop=True)'''
+
