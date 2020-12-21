@@ -136,12 +136,12 @@ def create_database(connection, query):
     except OperationalError as e:
         print(f"The error '{e}' occurred")
 
-create_database_query = "CREATE DATABASE Pict_Base"
+#create_database_query = "CREATE DATABASE pict_base"
 #create_database(connection, create_database_query)
 
 ###коннект###
 connection = create_connection(
-    "Pict_Base", "postgres", "logocentrism1", "127.0.0.1", "5432"
+    "pict_base", "postgres", "logocentrism1", "127.0.0.1", "5432"
 )
 
 ### создание таблицы###
@@ -169,47 +169,14 @@ print('create_Pict_table: done')
 ###внесение данных в таблицу###
 pict_records = ", ".join(["%s"] * len(pict))
 insert_query = (
-    f"INSERT INTO pict (picture_name, pict_text) VALUES {pict_records}"
+    f"INSERT INTO picture (picture_name, pict_text) VALUES {pict_records}"
 )
 
 connection.autocommit = True
 cursor = connection.cursor()
 cursor.execute(insert_query, pict)
 print('information insert into database')
-### алгоритмы ###
 
-### Левенштейн ###
-def my_dist_cached(a, b):
-    @lru_cache(maxsize=len(a) * len(b))
-    def recursive(i, j):
-        if i == 0 or j == 0:
-            return max(i, j)
-        elif a[i - 1] == b[j - 1]:
-            return recursive(i - 1, j - 1)
-        else:
-            return 1 + min(
-                recursive(i, j - 1),
-                recursive(i - 1, j),
-                recursive(i - 1, j - 1)
-            )
-    return recursive(len(a), len(b))
-
-###Коэфициент Танимото###
-def tanimoto(s1, s2):
-    a, b, c = len(s1), len(s2), 0.0
-
-    for sym in s1:
-        if sym in s2:
-            c += 1
-
-    return c / (a + b - c)
-
-###Дифлиб###
-
-
-def simil(s1,s2):
-    matcher = difflib.SequenceMatcher(None, s1, s2)
-    return matcher.ratio()
 
 ### поиск###
 """
